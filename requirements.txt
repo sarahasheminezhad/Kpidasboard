@@ -1,6 +1,0 @@
-Flask
-pandas
-openpyxl
-Flask-SQLAlchemy
-Flask-Login
-Werkzeug
