@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>دیتای من | سیستم رتبه‌بندی KPI</title>
+    <style>
+        @import url('https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css');
+        body { font-family: Vazirmatn, sans-serif; background-color: #f4f6f9; color: #333; margin: 0; padding: 20px; }
+        .container { max-width: 700px; margin: 0 auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+
+        .back-link {
+            display: inline-flex; align-items: center; gap: 6px;
+            color: #7f8c8d; text-decoration: none; font-size: 14px; margin-bottom: 15px;
+        }
+        .back-link:hover { color: #2c3e50; }
+        .back-link svg { width: 16px; height: 16px; }
+
+        h1 { text-align: center; color: #2c3e50; margin-bottom: 5px; font-size: 22px; }
+        .subtitle { text-align: center; color: #7f8c8d; font-size: 14px; margin-bottom: 25px; }
+
+        /* --- صفحه‌ی ورود رمز --- */
+        .login-box { background: #eef2f7; padding: 25px; border-radius: 8px; text-align: center; }
+        .login-box p { margin-top: 0; color: #555; }
+        .login-box input {
+            width: 100%; max-width: 280px; padding: 12px 14px; border-radius: 6px;
+            border: 1px solid #ccc; font-family: inherit; font-size: 16px;
+            box-sizing: border-box; text-align: center; letter-spacing: 1px;
+        }
+        .login-box input:focus { outline: none; border-color: #3498db; }
+        .login-box button {
+            margin-top: 14px; background: #2c3e50; color: #fff; border: none;
+            padding: 11px 30px; border-radius: 6px; font-family: inherit;
+            font-size: 15px; font-weight: bold; cursor: pointer; transition: background 0.2s ease;
+        }
+        .login-box button:hover { background: #1a252f; }
+        .login-box button:disabled { background: #95a5a6; cursor: wait; }
+
+        .login-error {
+            color: #e74c3c; font-size: 14px; font-weight: bold;
+            margin-top: 12px; min-height: 18px;
+        }
+        .login-status {
+            color: #7f8c8d; font-size: 13px; margin-top: 12px; min-height: 16px;
+        }
+
+        /* --- صفحه‌ی نمایش دیتا --- */
+        .detail-page { display: none; }
+
+        .detail-grid {
+            display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin-top: 20px;
+        }
+        .detail-card {
+            background: #f8f9fa; border: 1px solid #e1e8ed; border-radius: 8px;
+            padding: 16px; text-align: center;
+        }
+        .detail-card .d-label { font-size: 13px; color: #7f8c8d; margin-bottom: 6px; }
+        .detail-card .d-val { font-size: 24px; font-weight: bold; color: #2c3e50; }
+
+        .note-box {
+            margin-top: 18px; background: #fffbea; border: 1px solid #f1c40f;
+            border-radius: 8px; padding: 14px 16px; font-size: 14px; color: #6b5900;
+        }
+        .note-box .n-label { font-weight: bold; margin-bottom: 4px; }
+
+        .no-data-msg {
+            text-align: center; color: #7f8c8d; padding: 30px 10px;
+        }
+
+        .logout-wrap { text-align: center; margin-top: 22px; }
+        .logout-btn {
+            background: none; border: 1px solid #ccc; color: #7f8c8d;
+            padding: 8px 20px; border-radius: 6px; font-family: inherit;
+            font-size: 13px; cursor: pointer;
+        }
+        .logout-btn:hover { background: #f4f6f9; color: #333; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <a href="index.html" class="back-link">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"></path><path d="M12 19l-7-7 7-7"></path></svg>
+        بازگشت به داشبورد
+    </a>
+
+    <h1>🔐 دیتای تفصیلی من</h1>
+    <div class="subtitle" id="pageSubtitle">در حال بارگذاری...</div>
+
+    <!-- مرحله ۱: ورود رمز عبور -->
+    <div id="loginBox" class="login-box">
+        <p>برای مشاهده روند کامل خود، رمز عبورتان را وارد کنید:</p>
+        <input type="password" id="passwordInput" placeholder="رمز عبور" autocomplete="off" />
+        <br>
+        <button type="button" id="loginBtn" onclick="checkPassword()">ورود</button>
+        <div class="login-error" id="loginError"></div>
+        <div class="login-status" id="loginStatus"></div>
+    </div>
+
+    <!-- مرحله ۲: نمایش دیتای تفصیلی (بعد از ورود موفق) -->
+    <div id="detailPage" class="detail-page">
+        <div class="detail-grid">
+            <div class="detail-card">
+                <div class="d-label">📦 تعداد بارنامه</div>
+                <div class="d-val" id="valWaybill">—</div>
+            </div>
+            <div class="detail-card">
+                <div class="d-label">📮 تعداد بسته</div>
+                <div class="d-val" id="valPackage">—</div>
+            </div>
+            <div class="detail-card">
+                <div class="d-label">👥 تعداد مشتریان</div>
+                <div class="d-val" id="valCustomer">—</div>
+            </div>
+            <div class="detail-card">
+                <div class="d-label">↩️ تعداد مرجوعی</div>
+                <div class="d-val" id="valReturn">—</div>
+            </div>
+        </div>
+
+        <div class="note-box" id="noteBox" style="display:none;">
+            <div class="n-label">📝 یادداشت</div>
+            <div id="noteText"></div>
+        </div>
+
+        <div class="logout-wrap">
+            <button type="button" class="logout-btn" onclick="location.reload()">خروج</button>
+        </div>
+    </div>
+
+    <!-- حالتی که برای این ماه هنوز دیتای تفصیلی بارگذاری نشده -->
+    <div id="noDataMsg" class="no-data-msg" style="display:none;">
+        دیتای تفصیلی برای این ماه هنوز ثبت نشده است.
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script>
+    // ---------------------------------------------------------------
+    // تنظیمات
+    // ---------------------------------------------------------------
+    // فایل رمزهای عبور (شیت با ستون‌های: name, password)
+    const PASSWORDS_FILE = "passwords.xlsx";
+
+    // نگاشت هر ماه به فایل اکسل دیتای تفصیلی مربوط به همان ماه.
+    // کلید (سمت چپ) باید همون value ای باشه که در index.html در AVAILABLE_MONTHS استفاده شده.
+    // هر فایل، یک شیت با ستون‌های: name, waybillCount, packageCount, customerCount, returnCount, note
+    const DETAILS_FILE_BY_MONTH = {
+        "1403-03": "1403-03-details.xlsx",
+        // "1403-04": "1403-04-details.xlsx",
+    };
+
+    // ---------------------------------------------------------------
+    // خواندن پارامترهای URL (نام فرد + ماه انتخاب‌شده در داشبورد)
+    // ---------------------------------------------------------------
+    const urlParams = new URLSearchParams(window.location.search);
+    const targetName = (urlParams.get('name') || "").trim();
+    const targetMonth = (urlParams.get('month') || "").trim();
+
+    const pageSubtitle = document.getElementById('pageSubtitle');
+    const loginBox = document.getElementById('loginBox');
+    const detailPage = document.getElementById('detailPage');
+    const noDataMsg = document.getElementById('noDataMsg');
+    const loginError = document.getElementById('loginError');
+    const loginStatus = document.getElementById('loginStatus');
+    const loginBtn = document.getElementById('loginBtn');
+    const passwordInput = document.getElementById('passwordInput');
+
+    let correctPassword = null;
+    let passwordsLoaded = false;
+
+    // اگر پارامترها ناقص بودن (مثلاً کاربر مستقیم این صفحه رو باز کرده)
+    if (!targetName || !targetMonth) {
+        pageSubtitle.textContent = "خطا: نام یا ماه مشخص نشده. لطفاً از داشبورد اصلی وارد شوید.";
+        loginBox.style.display = 'none';
+    } else {
+        pageSubtitle.textContent = `همکار گرامی: ${targetName}`;
+        loadPasswordFor(targetName);
+    }
+
+    // خواندن فایل passwords.xlsx و پیدا کردن رمز مربوط به targetName
+    async function loadPasswordFor(name) {
+        loginStatus.textContent = "در حال آماده‌سازی...";
+        try {
+            const response = await fetch(PASSWORDS_FILE);
+            if (!response.ok) throw new Error("فایل رمزها پیدا نشد: " + PASSWORDS_FILE);
+            const arrayBuffer = await response.arrayBuffer();
+            const workbook = XLSX.read(arrayBuffer, { type: "array" });
+            const sheet = workbook.Sheets[workbook.SheetNames[0]];
+            const rows = XLSX.utils.sheet_to_json(sheet, { defval: null });
+
+            const row = rows.find(r => String(r.name ?? "").trim() === name);
+            if (!row) {
+                loginError.textContent = "برای این نام رمزی ثبت نشده. با مدیر سیستم تماس بگیرید.";
+                passwordInput.disabled = true;
+                loginBtn.disabled = true;
+                loginStatus.textContent = "";
+                return;
+            }
+            correctPassword = String(row.password ?? "");
+            passwordsLoaded = true;
+            loginStatus.textContent = "";
+        } catch (err) {
+            console.error(err);
+            loginError.textContent = "خطا در بارگذاری فایل رمزها: " + err.message;
+            loginStatus.textContent = "";
+        }
+    }
+
+    async function checkPassword() {
+        if (!passwordsLoaded) {
+            loginError.textContent = "هنوز اطلاعات آماده نشده، چند لحظه صبر کنید.";
+            return;
+        }
+        loginError.textContent = "";
+        const entered = passwordInput.value;
+
+        if (entered === "" ) {
+            loginError.textContent = "رمز عبور را وارد کنید.";
+            return;
+        }
+
+        if (entered !== correctPassword) {
+            loginError.textContent = "رمز عبور اشتباه است.";
+            passwordInput.value = "";
+            passwordInput.focus();
+            return;
+        }
+
+        // رمز درست بود -> بارگذاری دیتای تفصیلی
+        loginBtn.disabled = true;
+        loginBtn.textContent = "در حال بارگذاری...";
+        await loadDetailData();
+    }
+
+    // اجازه‌ی ورود با زدن Enter داخل اینپوت رمز
+    passwordInput.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') checkPassword();
+    });
+
+    // خواندن فایل دیتای تفصیلی مربوط به ماه انتخاب‌شده و نمایش ردیف مربوط به targetName
+    async function loadDetailData() {
+        const detailsFile = DETAILS_FILE_BY_MONTH[targetMonth];
+        if (!detailsFile) {
+            loginBox.style.display = 'none';
+            noDataMsg.style.display = 'block';
+            return;
+        }
+
+        try {
+            const response = await fetch(detailsFile);
+            if (!response.ok) throw new Error("فایل دیتای تفصیلی پیدا نشد: " + detailsFile);
+            const arrayBuffer = await response.arrayBuffer();
+            const workbook = XLSX.read(arrayBuffer, { type: "array" });
+            const sheet = workbook.Sheets[workbook.SheetNames[0]];
+            const rows = XLSX.utils.sheet_to_json(sheet, { defval: null });
+
+            const row = rows.find(r => String(r.name ?? "").trim() === targetName);
+            if (!row) {
+                loginBox.style.display = 'none';
+                noDataMsg.style.display = 'block';
+                return;
+            }
+
+            document.getElementById('valWaybill').textContent = row.waybillCount ?? "—";
+            document.getElementById('valPackage').textContent = row.packageCount ?? "—";
+            document.getElementById('valCustomer').textContent = row.customerCount ?? "—";
+            document.getElementById('valReturn').textContent = row.returnCount ?? "—";
+
+            const noteBox = document.getElementById('noteBox');
+            if (row.note) {
+                document.getElementById('noteText').textContent = row.note;
+                noteBox.style.display = 'block';
+            }
+
+            loginBox.style.display = 'none';
+            detailPage.style.display = 'block';
+        } catch (err) {
+            console.error(err);
+            loginBox.style.display = 'none';
+            noDataMsg.textContent = "خطا در بارگذاری دیتای تفصیلی: " + err.message;
+            noDataMsg.style.display = 'block';
+        }
+    }
+</script>
+
+</body>
+</html>
